@@ -1,6 +1,13 @@
 import "./style.css";
 
+const alphabet =
+  "日ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍｦｲｸｺｿﾁﾄﾉﾌﾔﾖﾙﾚﾛﾝ012345789\":・.=*+-<>¦｜&çﾘｸ/\\_@#WMB8%$QAXPSEFCGZVJLTI?+=~^_-,:'`.";
+
 const fileInput = document.getElementById("image-input") as HTMLInputElement;
+const blockSizeInput = document.getElementById(
+  "block-size",
+) as HTMLInputElement;
+const fontSizeInput = document.getElementById("font-size") as HTMLInputElement;
 const canvasBefore = document.getElementById(
   "canvas-before",
 ) as HTMLCanvasElement;
@@ -14,6 +21,13 @@ const ctxAfter = canvasAfter.getContext("2d");
 if (ctxBefore === null || ctxAfter === null) {
   throw new Error("Failed to get canvas context");
 }
+
+if (!blockSizeInput || !fontSizeInput) {
+  throw new Error("Failed to get input elements");
+}
+
+let BLOCK_SIZE = blockSizeInput.valueAsNumber || 16; // Default to 16 if not set
+let FONT_SIZE = fontSizeInput.valueAsNumber || 16; // Default to 16 if not set
 
 const drawImage = (
   image: HTMLImageElement,
@@ -31,13 +45,40 @@ const onImageLoad = (image: HTMLImageElement) => {
   const imageData = ctxBefore.getImageData(0, 0, image.width, image.height);
   if (imageData) {
     const processedImage = processImage(imageData);
-    canvasAfter.width = processedImage.width;
-    canvasAfter.height = processedImage.height;
-    ctxAfter.putImageData(processedImage, 0, 0);
+
+    canvasAfter.width = processedImage[0].length * FONT_SIZE;
+    canvasAfter.height = processedImage.length * FONT_SIZE;
+
+    ctxAfter.fillRect(0, 0, canvasAfter.width, canvasAfter.height);
+
+    processedImage.forEach((line, y) => {
+      line.forEach((charecter, x) => {
+        ctxAfter.save();
+        ctxAfter.font = `${FONT_SIZE}px monospace`;
+        ctxAfter.fillStyle = charecter.rgb;
+        ctxAfter.textAlign = "center";
+        ctxAfter.textBaseline = "middle";
+        ctxAfter.shadowColor = charecter.rgb;
+        ctxAfter.shadowBlur = 8;
+        ctxAfter.fillText(
+          charecter.char,
+          x * FONT_SIZE + FONT_SIZE / 2,
+          y * FONT_SIZE + FONT_SIZE / 2,
+        );
+        ctxAfter.restore();
+      });
+    });
+
+    canvasBefore.style.height = "45vh";
+    canvasAfter.style.height = "45vh";
   }
 };
 
-const processImage = (imageData: ImageData): ImageData => {
+type Charecter = { char: string; rgb: string };
+type Line = Charecter[];
+type Image = Line[];
+
+const processImage = (imageData: ImageData): Image => {
   const newImageData = new ImageData(
     new Uint8ClampedArray(imageData.data),
     imageData.width,
@@ -47,18 +88,22 @@ const processImage = (imageData: ImageData): ImageData => {
   const data = newImageData.data;
   const width = imageData.width;
   const height = imageData.height;
-  const blockSize = 16;
 
-  for (let y = 0; y < height; y += blockSize) {
-    for (let x = 0; x < width; x += blockSize) {
+  const image: Image = [];
+
+  for (let y = 0; y < height; y += BLOCK_SIZE) {
+    const line: Line = [];
+    image.push(line);
+
+    for (let x = 0; x < width; x += BLOCK_SIZE) {
       let rTotal = 0,
         gTotal = 0,
         bTotal = 0,
         pixelCount = 0;
 
       // Iterate over each pixel in this 16x16 block
-      for (let dy = 0; dy < blockSize; dy++) {
-        for (let dx = 0; dx < blockSize; dx++) {
+      for (let dy = 0; dy < BLOCK_SIZE; dy++) {
+        for (let dx = 0; dx < BLOCK_SIZE; dx++) {
           const px = x + dx;
           const py = y + dy;
 
@@ -81,29 +126,18 @@ const processImage = (imageData: ImageData): ImageData => {
       const luminance =
         ((0.2126 * rAvg + 0.7152 * gAvg + 0.0722 * bAvg) / 255) * 100;
 
-      console.log(
-        `Block (${x}, ${y}): RGB(${rAvg}, ${gAvg}, ${bAvg}) | Lum: ${luminance.toFixed(2)}`,
-      );
+      // Get alhabet character for this block
+      const index = Math.floor(luminance); // 0-99
+      const charecter = alphabet[index];
 
-      // Apply the average color back to each pixel in the block
-      for (let dy = 0; dy < blockSize; dy++) {
-        for (let dx = 0; dx < blockSize; dx++) {
-          const px = x + dx;
-          const py = y + dy;
-
-          if (px >= width || py >= height) continue;
-
-          const i = (py * width + px) * 4;
-          data[i] = rAvg;
-          data[i + 1] = gAvg;
-          data[i + 2] = bAvg;
-          // Leave Alpha alone unless you're a monster
-        }
-      }
+      line.push({
+        char: charecter,
+        rgb: `rgb(${rAvg}, ${gAvg}, ${bAvg})`,
+      });
     }
   }
 
-  return newImageData;
+  return image;
 };
 
 const main = () => {
@@ -114,6 +148,16 @@ const main = () => {
     const image = new Image();
     image.src = URL.createObjectURL(file);
     image.onload = () => onImageLoad(image);
+  });
+
+  fontSizeInput.addEventListener("input", (event) => {
+    FONT_SIZE = (event.target as HTMLInputElement).valueAsNumber || 16;
+    console.log("Font size changed to:", FONT_SIZE);
+  });
+
+  blockSizeInput.addEventListener("input", (event) => {
+    BLOCK_SIZE = (event.target as HTMLInputElement).valueAsNumber || 16;
+    console.log("Block size changed to:", BLOCK_SIZE);
   });
 
   document.addEventListener("paste", (e) => {

@@ -15,9 +15,33 @@
   </head>
   <body>
     <h1>Matrixify</h1>
-    <h2>Upload an image or paste it from the clipboard</h2>
-    <input type="file" id="image-input" accept="image/*" />
-    <div class="if flex-column gap-32">
+    <h2 class="if mb-8">Upload an image or paste it from the clipboard</h2>
+    <div class="if flex gap-32">
+      <input type="file" id="image-input" accept="image/*" />
+      <div>
+        <span>Block size</span>
+        <input
+          type="number"
+          id="block-size"
+          value="16"
+          min="2"
+          max="100"
+          step="2"
+        />
+      </div>
+      <div>
+        <span>Font size</span>
+        <input
+          type="number"
+          id="font-size"
+          value="16"
+          min="2"
+          max="100"
+          step="2"
+        />
+      </div>
+    </div>
+    <div class="if flex-column align-items-center">
       <canvas id="canvas-before" width="500" height="500"></canvas>
       <canvas id="canvas-after" width="500" height="500"></canvas>
     </div>
