@@ -52,16 +52,16 @@ const onImageLoad = (image: HTMLImageElement) => {
     ctxAfter.fillRect(0, 0, canvasAfter.width, canvasAfter.height);
 
     processedImage.forEach((line, y) => {
-      line.forEach((charecter, x) => {
+      line.forEach((character, x) => {
         ctxAfter.save();
         ctxAfter.font = `${FONT_SIZE}px monospace`;
-        ctxAfter.fillStyle = charecter.rgb;
+        ctxAfter.fillStyle = character.rgb;
         ctxAfter.textAlign = "center";
         ctxAfter.textBaseline = "middle";
-        ctxAfter.shadowColor = charecter.rgb;
+        ctxAfter.shadowColor = character.rgb;
         ctxAfter.shadowBlur = 8;
         ctxAfter.fillText(
-          charecter.char,
+          character.char,
           x * FONT_SIZE + FONT_SIZE / 2,
           y * FONT_SIZE + FONT_SIZE / 2,
         );
@@ -74,8 +74,8 @@ const onImageLoad = (image: HTMLImageElement) => {
   }
 };
 
-type Charecter = { char: string; rgb: string };
-type Line = Charecter[];
+type Character = { char: string; rgb: string };
+type Line = Character[];
 type Image = Line[];
 
 const processImage = (imageData: ImageData): Image => {
@@ -126,12 +126,12 @@ const processImage = (imageData: ImageData): Image => {
       const luminance =
         ((0.2126 * rAvg + 0.7152 * gAvg + 0.0722 * bAvg) / 255) * 100;
 
-      // Get alhabet character for this block
+      // Get alphabet character for this block
       const index = Math.floor(luminance); // 0-99
-      const charecter = alphabet[index];
+      const character = alphabet[index];
 
       line.push({
-        char: charecter,
+        char: character,
         rgb: `rgb(${rAvg}, ${gAvg}, ${bAvg})`,
       });
     }
